@@ -16,6 +16,9 @@ TITLE="${2:-PM Board Template}"
 SOURCE_OWNER="${SOURCE_OWNER:-tomimor}"
 SOURCE_NUMBER="${SOURCE_NUMBER:-9}"
 
+# External jq instead of gh --jq: on a GraphQL error gh prints the raw
+# response body unfiltered, which would defeat the emptiness guards below.
+# The `|| true` keeps set -e from killing the script before those guards run.
 owner_project_id() {
   local owner="$1" number="$2"
   gh api graphql -f query='
@@ -23,21 +26,21 @@ owner_project_id() {
       repositoryOwner(login: $owner) {
         ... on ProjectV2Owner { projectV2(number: $number) { id } }
       }
-    }' -f owner="$owner" -F number="$number" --jq '.data.repositoryOwner.projectV2.id'
+    }' -f owner="$owner" -F number="$number" 2>/dev/null \
+    | jq -r '.data.repositoryOwner.projectV2.id // empty' 2>/dev/null || true
 }
 
 owner_node_id() {
   gh api graphql -f query='
     query($owner: String!) { repositoryOwner(login: $owner) { id } }' \
-    -f owner="$1" --jq '.data.repositoryOwner.id'
+    -f owner="$1" 2>/dev/null \
+    | jq -r '.data.repositoryOwner.id // empty' 2>/dev/null || true
 }
 
-# `|| true`: a missing project is a GraphQL error (gh exits 1), and set -e
-# would otherwise kill the script before the messages below can print.
-SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER" || true)"
+SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER")"
 [ -n "$SOURCE_ID" ] || { echo "error: source project $SOURCE_OWNER/#$SOURCE_NUMBER not found or not readable" >&2; exit 1; }
 
-TARGET_ID="$(owner_node_id "$TARGET_OWNER" || true)"
+TARGET_ID="$(owner_node_id "$TARGET_OWNER")"
 [ -n "$TARGET_ID" ] || { echo "error: owner $TARGET_OWNER not found" >&2; exit 1; }
 
 if ! URL="$(gh api graphql -f query='

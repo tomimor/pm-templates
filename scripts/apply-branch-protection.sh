@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Applies branch protection to a repo's main branch.
 # Idempotent, safe to re-run to change settings. Requires repo admin + `repo` scope.
+# Private repos need a paid plan for branch protection; free plans get a 403.
 #
 # Usage: scripts/apply-branch-protection.sh <owner>/<repo> [branch]
 #
@@ -12,16 +13,20 @@ set -euo pipefail
 REPO="${1:?usage: $0 <owner>/<repo> [branch]}"
 BRANCH="${2:-main}"
 
-# Required status checks. Names must match the workflow job names exactly.
-# Set to '[]' to require none (e.g. before any CI exists in the repo).
-CHECKS='["TruffleHog", "Validate Conventional Commit title", "markdownlint"]'
+# Required status checks. Context names must match the workflow job names
+# exactly. Set to '[]' to require none (e.g. before any CI exists in the repo).
+CHECKS='[
+  {"context": "TruffleHog"},
+  {"context": "Validate Conventional Commit title"},
+  {"context": "markdownlint"}
+]'
 
 gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" \
   --input - <<JSON
 {
   "required_status_checks": {
     "strict": false,
-    "contexts": $CHECKS
+    "checks": $CHECKS
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {

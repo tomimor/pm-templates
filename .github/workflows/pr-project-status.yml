@@ -41,6 +41,8 @@ jobs:
 
           if [ "$IS_DRAFT" = "true" ]; then STATUS="In Progress"; else STATUS="To Review"; fi
 
+          # External jq, not gh --jq: on GraphQL errors gh prints the raw
+          # response body unfiltered, which would defeat the guard below.
           PROJECT_JSON="$(gh api graphql -f query='
             query($owner: String!, $number: Int!) {
               repositoryOwner(login: $owner) {
@@ -53,8 +55,8 @@ jobs:
                   }
                 }
               }
-            }' -f owner="$OWNER" -F number="$NUMBER" \
-            --jq '.data.repositoryOwner.projectV2')"
+            }' -f owner="$OWNER" -F number="$NUMBER" 2>/dev/null \
+            | jq -c '.data.repositoryOwner.projectV2 // empty' 2>/dev/null || true)"
 
           if [ -z "$PROJECT_JSON" ]; then
             echo "::error::Project not found or PROJECTS_TOKEN lacks access: $PROJECT_URL"
