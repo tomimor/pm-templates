@@ -1,8 +1,11 @@
 # github-pm-templates
 
 Reusable GitHub project management baseline: workflows, issue and PR templates,
-and setup scripts, extracted from a working repo so any new or existing repo can
-adopt the same conventions in minutes.
+a replicable project board, and setup scripts, extracted from a working repo so
+any new or existing repo can adopt the same conventions in minutes.
+
+**Agents start at [AGENTS.md](AGENTS.md)**: it is the step-by-step runbook for
+replicating this setup in a target repo.
 
 ## What's included
 
@@ -15,6 +18,7 @@ adopt the same conventions in minutes.
 | `pr-labels.yml` | Applies labels from changed paths using `actions/labeler` and `.github/labeler.yml`. |
 | `markdownlint.yml` | Lints Markdown on PRs. Rules and scope live in `.markdownlint-cli2.jsonc` so CI and local runs match. |
 | `secret-scan.yml` | TruffleHog scan on PRs and pushes to main. Fails on verified findings. |
+| `pr-project-status.yml` | Moves the PR's project-board item (draft to "In Progress", ready to "To Review"). Inert until `PROJECT_URL` (repo variable) and `PROJECTS_TOKEN` (secret) are set. |
 
 All actions are SHA-pinned and `dependabot.yml` keeps the pins current.
 
@@ -30,6 +34,15 @@ All actions are SHA-pinned and `dependabot.yml` keeps the pins current.
 - `apply-labels.sh <owner>/<repo>`: creates the baseline label set.
 - `apply-branch-protection.sh <owner>/<repo> [branch]`: PR required, 1 approval,
   linear history, conversation resolution, required status checks.
+- `copy-project.sh <target-owner> [title]`: replicates the canonical project
+  board (views, fields) to an org or user via `copyProjectV2`.
+
+### Project board
+
+The board (views, Status field, workflows) lives as a live GitHub Project, at
+`https://github.com/users/tomimor/projects/9`, because views have no
+create/update API. `docs/project-board.md` is its reviewable snapshot and lists
+the manual follow-ups (auto-add, repo link) each copy needs.
 
 ## How to use it
 

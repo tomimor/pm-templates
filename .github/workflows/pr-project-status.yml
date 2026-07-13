@@ -1,0 +1,81 @@
+# Moves the PR's project item: draft -> "In Progress", ready -> "To Review".
+#
+# Setup (both required, workflow no-ops without them):
+#   - Repo variable PROJECT_URL, e.g. https://github.com/orgs/acme/projects/3
+#   - Repo secret PROJECTS_TOKEN: fine-grained PAT with Projects read/write on
+#     the project owner. The default GITHUB_TOKEN cannot write org or user
+#     projects, which is why a PAT is needed.
+name: PR Project Status
+
+on:
+  pull_request:
+    types: [opened, reopened, converted_to_draft, ready_for_review]
+
+permissions: {}
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+      PROJECT_URL: ${{ vars.PROJECT_URL }}
+      PR_NODE_ID: ${{ github.event.pull_request.node_id }}
+      IS_DRAFT: ${{ github.event.pull_request.draft }}
+    steps:
+      - name: Set project item status
+        if: env.GH_TOKEN != '' && env.PROJECT_URL != ''
+        run: |
+          set -euo pipefail
+
+          if [[ "$PROJECT_URL" =~ github\.com/(orgs|users)/([^/]+)/projects/([0-9]+) ]]; then
+            OWNER="${BASH_REMATCH[2]}"
+            NUMBER="${BASH_REMATCH[3]}"
+          else
+            echo "::error::PROJECT_URL is not a project URL: $PROJECT_URL"
+            exit 1
+          fi
+
+          if [ "$IS_DRAFT" = "true" ]; then STATUS="In Progress"; else STATUS="To Review"; fi
+
+          PROJECT_JSON="$(gh api graphql -f query='
+            query($owner: String!, $number: Int!) {
+              repositoryOwner(login: $owner) {
+                ... on ProjectV2Owner {
+                  projectV2(number: $number) {
+                    id
+                    field(name: "Status") {
+                      ... on ProjectV2SingleSelectField { id options { id name } }
+                    }
+                  }
+                }
+              }
+            }' -f owner="$OWNER" -F number="$NUMBER" \
+            --jq '.data.repositoryOwner.projectV2')"
+
+          PROJECT_ID="$(jq -r '.id' <<<"$PROJECT_JSON")"
+          FIELD_ID="$(jq -r '.field.id' <<<"$PROJECT_JSON")"
+          OPTION_ID="$(jq -r --arg s "$STATUS" '.field.options[] | select(.name == $s) | .id' <<<"$PROJECT_JSON")"
+
+          if [ -z "$OPTION_ID" ]; then
+            echo "::error::Status option '$STATUS' not found in project $PROJECT_URL"
+            exit 1
+          fi
+
+          # Idempotent: returns the existing item if the PR is already on the board.
+          ITEM_ID="$(gh api graphql -f query='
+            mutation($project: ID!, $content: ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
+                item { id }
+              }
+            }' -f project="$PROJECT_ID" -f content="$PR_NODE_ID" \
+            --jq '.data.addProjectV2ItemById.item.id')"
+
+          gh api graphql -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project, itemId: $item, fieldId: $field,
+                value: {singleSelectOptionId: $option}
+              }) { projectV2Item { id } }
+            }' -f project="$PROJECT_ID" -f item="$ITEM_ID" -f field="$FIELD_ID" -f option="$OPTION_ID" >/dev/null
+
+          echo "PR #${{ github.event.pull_request.number }} -> $STATUS"
