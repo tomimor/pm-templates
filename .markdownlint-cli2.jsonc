@@ -7,5 +7,7 @@
     // PR template opens with H2 sections, no single top-level H1
     "MD041": false
   },
-  "globs": ["README.md", "docs/**/*.md", ".github/**/*.md"]
+  // "*.md" keeps root files (AGENTS.md) covered locally too: the CI action
+  // always lints root markdown, so without it local and CI scope would differ.
+  "globs": ["*.md", "docs/**/*.md", ".github/**/*.md"]
 }

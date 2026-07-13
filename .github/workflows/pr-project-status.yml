@@ -1,10 +1,13 @@
 # Moves the PR's project item: draft -> "In Progress", ready -> "To Review".
 #
+# "Closed -> Done" is left to the board's built-in workflow on purpose.
+#
 # Setup (both required, workflow no-ops without them):
 #   - Repo variable PROJECT_URL, e.g. https://github.com/orgs/acme/projects/3
 #   - Repo secret PROJECTS_TOKEN: fine-grained PAT with Projects read/write on
-#     the project owner. The default GITHUB_TOKEN cannot write org or user
-#     projects, which is why a PAT is needed.
+#     the project owner, plus repository access with Pull requests read (the
+#     mutation has to resolve the PR node). The default GITHUB_TOKEN cannot
+#     write org or user projects, which is why a PAT is needed.
 name: PR Project Status
 
 on:
@@ -20,6 +23,7 @@ jobs:
       GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
       PROJECT_URL: ${{ vars.PROJECT_URL }}
       PR_NODE_ID: ${{ github.event.pull_request.node_id }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       IS_DRAFT: ${{ github.event.pull_request.draft }}
     steps:
       - name: Set project item status
@@ -52,9 +56,18 @@ jobs:
             }' -f owner="$OWNER" -F number="$NUMBER" \
             --jq '.data.repositoryOwner.projectV2')"
 
-          PROJECT_ID="$(jq -r '.id' <<<"$PROJECT_JSON")"
-          FIELD_ID="$(jq -r '.field.id' <<<"$PROJECT_JSON")"
-          OPTION_ID="$(jq -r --arg s "$STATUS" '.field.options[] | select(.name == $s) | .id' <<<"$PROJECT_JSON")"
+          if [ -z "$PROJECT_JSON" ]; then
+            echo "::error::Project not found or PROJECTS_TOKEN lacks access: $PROJECT_URL"
+            exit 1
+          fi
+
+          PROJECT_ID="$(jq -r '.id // empty' <<<"$PROJECT_JSON")"
+          FIELD_ID="$(jq -r '.field.id // empty' <<<"$PROJECT_JSON")"
+          if [ -z "$FIELD_ID" ]; then
+            echo "::error::Project has no single-select 'Status' field: $PROJECT_URL"
+            exit 1
+          fi
+          OPTION_ID="$(jq -r --arg s "$STATUS" '.field.options[]? | select(.name == $s) | .id' <<<"$PROJECT_JSON")"
 
           if [ -z "$OPTION_ID" ]; then
             echo "::error::Status option '$STATUS' not found in project $PROJECT_URL"
@@ -78,4 +91,4 @@ jobs:
               }) { projectV2Item { id } }
             }' -f project="$PROJECT_ID" -f item="$ITEM_ID" -f field="$FIELD_ID" -f option="$OPTION_ID" >/dev/null
 
-          echo "PR #${{ github.event.pull_request.number }} -> $STATUS"
+          echo "PR #$PR_NUMBER -> $STATUS"
