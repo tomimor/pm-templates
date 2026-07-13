@@ -65,14 +65,19 @@ Then follow the checklist the script prints.
 
 ### Post-setup checklist
 
+The full ordered version lives in [AGENTS.md](AGENTS.md); the short form:
+
 1. Adapt `.github/labeler.yml` globs to the repo layout, and check every label
    it references exists (`scripts/apply-labels.sh` covers the baseline set).
 2. Uncomment the matching package ecosystem in `.github/dependabot.yml`.
 3. Run `scripts/apply-labels.sh <owner>/<repo>`.
-4. Open a first PR so the checks report at least once, then run
+4. Template-created repos only: remove the template metadata (AGENTS.md,
+   `docs/project-board*.md`, `scripts/apply-to-repo.sh`,
+   `scripts/copy-project.sh`) and replace this README with the target's own.
+5. Open a first PR so the checks report at least once, then run
    `scripts/apply-branch-protection.sh <owner>/<repo>`. Required check names in
    the script must match the workflow job names exactly.
-5. If the org uses GitHub issue types, switch `ISSUE_TEMPLATE/task.yml` from
+6. If the org uses GitHub issue types, switch `ISSUE_TEMPLATE/task.yml` from
    `labels:` to `type: Task`.
 
 ## Design notes
