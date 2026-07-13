@@ -5,9 +5,14 @@ agent asked to "set up PM automation like github-pm-templates" in a target
 repo, follow the runbook below top to bottom. Every step is idempotent, so
 re-running after a partial failure is safe.
 
-Because GitHub templates copy every file, some files in this repo describe the
-template itself and must be removed from targets. Step 6 is that cleanup; do
-not skip it.
+Two paths run through the runbook:
+
+- **Template-created repos** (step 1, new-repo variant) contain every file of
+  this repo, including files that describe the template itself. Step 6 removes
+  those; do not skip it.
+- **Existing repos** get the payload via `apply-to-repo.sh`, which never
+  copies template metadata. Skip step 6's `git rm` and README stub, but still
+  do its commit-and-PR part.
 
 ## Inputs
 
@@ -20,12 +25,14 @@ Collect these before starting. Ask the user for anything missing.
 
 ## Preflight
 
-```sh
-gh auth status
-gh auth refresh -s project        # only if `project` scope is missing
-```
-
-Stop and report if `gh` is unauthenticated or the user lacks admin on `TARGET`.
+- `gh auth status` must show a logged-in user whose token has the `project`
+  scope. If the scope is missing, ask the user to run
+  `gh auth refresh -s project` themselves (it is an interactive browser flow).
+- For an existing `TARGET`, confirm admin:
+  `gh api repos/TARGET --jq .permissions.admin` must print `true`.
+- Run from a clone of this template repo, and confirm `git status -sb` shows
+  no `ahead` commits: GitHub copies the *pushed* main, so unpushed work here
+  silently produces stale targets.
 
 ## Runbook
 
@@ -37,8 +44,13 @@ New repo:
 gh repo create TARGET --template tomimor/github-pm-templates --private --clone
 ```
 
-Existing repo (run from a clone of this template repo; it also copies the two
-reusable scripts):
+The clone lands in `./<repo>` under the current directory. Template generation
+is asynchronous; if the clone comes up empty, wait a few seconds and re-clone.
+If creation is refused (org policy, template visibility), create the repo
+empty instead and use the existing-repo path below.
+
+Existing repo (run from this template clone; it also copies the two reusable
+scripts):
 
 ```sh
 scripts/apply-to-repo.sh <path-to-target-checkout>
@@ -46,12 +58,15 @@ scripts/apply-to-repo.sh <path-to-target-checkout>
 
 ### 2. Adapt per-repo files
 
-In the target checkout, on a branch (do not commit yet; step 6 joins this PR):
+In the target checkout, on a branch (do not commit yet; step 6 finishes this
+PR):
 
 - `.github/labeler.yml`: replace the example globs with the target repo's
   layout. Every label referenced must exist (step 3 creates the baseline set).
 - `.github/dependabot.yml`: uncomment the package ecosystem(s) matching the
   target's manifests.
+- If the target org defines GitHub issue types, switch
+  `.github/ISSUE_TEMPLATE/task.yml` from `labels: ["task"]` to `type: Task`.
 
 ### 3. Labels
 
@@ -61,12 +76,15 @@ scripts/apply-labels.sh TARGET
 
 ### 4. Project board (optional)
 
+Run from the template clone (`copy-project.sh` is never shipped to targets):
+
 ```sh
 scripts/copy-project.sh BOARD_OWNER "<board title>"
 ```
 
 If it fails against an org, org projects are likely disabled; the script
-prints the fix. Then things the API cannot do — hand these to the user:
+prints the fix, but changing org settings needs the user's explicit OK first.
+Then two things the API cannot do — hand these to the user:
 
 - Enable the auto-add workflow on the new board (UI only; see
   `docs/project-board.md`).
@@ -83,13 +101,13 @@ gh secret set PROJECTS_TOKEN --repo TARGET   # value must come from the user
 ```
 
 Never create or handle the PAT yourself: ask the user to create a
-fine-grained PAT with Projects read/write on `BOARD_OWNER` and paste it into
-the `gh secret set` prompt themselves.
+fine-grained PAT (Projects read/write on `BOARD_OWNER`, plus Pull requests
+read on the target repo) and paste it into the `gh secret set` prompt
+themselves.
 
-### 6. Clean template metadata out of the target
+### 6. Clean template metadata, commit, open the PR
 
-Only for repos created via `--template` (apply-to-repo.sh never copies these).
-In the target checkout, on the step-2 branch:
+Template-created repos only (apply-to-repo.sh never copies these):
 
 ```sh
 git rm AGENTS.md docs/project-board-plan.md docs/project-board.md \
@@ -101,13 +119,14 @@ heading and one line is enough; markdownlint expects the file to exist).
 Keep `scripts/apply-labels.sh` and `scripts/apply-branch-protection.sh`: they
 are generic and useful for re-runs from the target.
 
-Commit steps 2 and 6 together and open a PR. This PR doubles as the first run
-of the checks, which step 7 needs.
+Both paths: commit the step-2 (and step-6) changes and open a PR. This PR
+doubles as the first run of the checks, which step 7 needs.
 
 ### 7. Branch protection
 
-Run only after the step-6 PR has made the checks report at least once,
-otherwise GitHub rejects unknown contexts:
+Wait until the PR's checks have reported, then prefer merging the PR before
+running this (protection's 1-approval rule applies to open PRs immediately,
+and a solo maintainer would need admin bypass to merge):
 
 ```sh
 scripts/apply-branch-protection.sh TARGET
@@ -115,16 +134,28 @@ scripts/apply-branch-protection.sh TARGET
 
 Check names in the script must match the workflow job names. If the user
 removed a workflow, remove its check from the script's `CHECKS` list first.
+Note: branch protection on private repos requires a paid plan; on a free plan
+the API returns 403, report that to the user instead of retrying.
 
 ## Verify
 
-- `gh workflow list --repo TARGET` shows the six workflows.
-- On the step-6 PR: confirm the PR title check passes, labels apply, and the
-  author is auto-assigned.
+On the step-6 PR (before or after merge):
+
+- The PR title check passes and the author is auto-assigned.
 - Retitle the PR to `Bad Title`; confirm the title check fails; retitle back.
-- Confirm the target has no AGENTS.md and its README describes the target.
-- If the board is wired: confirm the PR appears on the board and moves to
-  "To Review".
+- If the board is wired: the PR appears on the board and moves to "To Review".
+
+Template-created repos only:
+
+- `gh workflow list --repo TARGET` shows the six workflows (pr-title,
+  pr-labels, auto-author-assign, markdownlint, secret-scan,
+  pr-project-status).
+- The target has no AGENTS.md and its README describes the target.
+
+Existing repos: `gh workflow list` and the path-based labels only work after
+the PR merges, because `pull_request_target` workflows run from the default
+branch. Verify those two after merge, and never flag a pre-existing AGENTS.md
+in the target as template metadata.
 
 ## Rules
 
@@ -133,3 +164,4 @@ removed a workflow, remove its check from the script's `CHECKS` list first.
   status checks.
 - Step 6's cleanup list is authoritative. When adding a template-metadata file
   to this repo, add it to that list in the same change.
+- After changing this repo, push main: the pushed state is the template.
