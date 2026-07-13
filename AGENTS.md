@@ -2,8 +2,10 @@
 
 This repo is a reusable GitHub project management baseline. If you are an
 agent asked to "set up PM automation like github-pm-templates" in a target
-repo, follow the runbook below top to bottom. Every step is idempotent, so
-re-running after a partial failure is safe.
+repo, follow the runbook below top to bottom. After a partial failure, resume
+at the failed step: steps 3, 5, and 7 are idempotent, but re-running step 1
+overwrites step-2 adaptations (the script guards against this) and re-running
+step 4 would create a duplicate board (the script aborts on a title match).
 
 Two paths run through the runbook:
 
@@ -47,7 +49,9 @@ gh repo create TARGET --template tomimor/github-pm-templates --private --clone
 The clone lands in `./<repo>` under the current directory. Template generation
 is asynchronous; if the clone comes up empty, wait a few seconds and re-clone.
 If creation is refused (org policy, template visibility), create the repo
-empty instead and use the existing-repo path below.
+empty instead and use the existing-repo path below. If it fails with "Name
+already exists", a previous attempt created it: `gh repo clone TARGET` and
+continue; it still counts as template-created for step 6.
 
 Existing repo (run from this template clone; it also copies the two reusable
 scripts):
@@ -73,6 +77,10 @@ PR):
 ```sh
 scripts/apply-labels.sh TARGET
 ```
+
+It overwrites color and description of same-named existing labels. On a repo
+with curated labels, run `gh label list --repo TARGET` first and confirm with
+the user.
 
 ### 4. Project board (optional)
 
@@ -110,7 +118,7 @@ themselves.
 Template-created repos only (apply-to-repo.sh never copies these):
 
 ```sh
-git rm AGENTS.md docs/project-board.md \
+git rm --ignore-unmatch AGENTS.md docs/project-board.md \
        scripts/apply-to-repo.sh scripts/copy-project.sh
 ```
 

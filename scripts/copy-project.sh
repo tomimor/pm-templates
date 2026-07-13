@@ -43,6 +43,17 @@ SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER")"
 TARGET_ID="$(owner_node_id "$TARGET_OWNER")"
 [ -n "$TARGET_ID" ] || { echo "error: owner $TARGET_OWNER not found" >&2; exit 1; }
 
+# Copying is not idempotent (same-title duplicates are allowed), so abort if
+# the target already has a board with this title.
+EXISTING="$(gh api graphql -f query='
+  query($owner: String!, $q: String!) {
+    repositoryOwner(login: $owner) {
+      ... on ProjectV2Owner { projectsV2(first: 5, query: $q) { nodes { title url } } }
+    }
+  }' -f owner="$TARGET_OWNER" -f q="$TITLE" 2>/dev/null \
+  | jq -r --arg t "$TITLE" '.data.repositoryOwner.projectsV2.nodes[]? | select(.title == $t) | .url' 2>/dev/null || true)"
+[ -z "$EXISTING" ] || { echo "error: $TARGET_OWNER already has a project titled '$TITLE': $EXISTING" >&2; echo "Pass a different title, or use the existing board." >&2; exit 1; }
+
 if ! URL="$(gh api graphql -f query='
   mutation($project: ID!, $owner: ID!, $title: String!) {
     copyProjectV2(input: {projectId: $project, ownerId: $owner, title: $title, includeDraftIssues: false}) {

@@ -13,6 +13,12 @@ git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 \
   || { echo "error: $TARGET is not a git checkout" >&2; exit 1; }
 [ "$(cd "$TARGET" && pwd)" != "$SRC" ] \
   || { echo "error: target is this template repo itself" >&2; exit 1; }
+# A re-run would overwrite uncommitted adaptations (labeler globs, dependabot
+# ecosystems) with template defaults, unrecoverably.
+if [ -n "$(git -C "$TARGET" status --porcelain -- .github .markdownlint-cli2.jsonc scripts)" ]; then
+  echo "error: target has uncommitted changes under payload paths; commit or stash before re-running" >&2
+  exit 1
+fi
 
 mkdir -p "$TARGET/.github/workflows" "$TARGET/.github/ISSUE_TEMPLATE" "$TARGET/scripts"
 

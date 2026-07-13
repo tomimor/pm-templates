@@ -11,7 +11,7 @@
 set -euo pipefail
 
 REPO="${1:?usage: $0 <owner>/<repo> [branch]}"
-BRANCH="${2:-main}"
+BRANCH="${2:-$(gh api "repos/$REPO" --jq .default_branch)}"
 
 # Required status checks. Context names must match the workflow job names
 # exactly. Set to '[]' to require none (e.g. before any CI exists in the repo).

@@ -16,6 +16,11 @@ on:
 
 permissions: {}
 
+# Rapid event pairs (open draft, then mark ready) race; let the newest win.
+concurrency:
+  group: pr-project-status-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   update-status:
     runs-on: ubuntu-latest
