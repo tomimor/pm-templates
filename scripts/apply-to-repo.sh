@@ -36,6 +36,7 @@ Payload copied. Manual follow-ups in the target repo:
   1. Adapt .github/labeler.yml globs to the repo layout.
   2. Uncomment the matching ecosystem in .github/dependabot.yml.
   3. Run scripts/apply-labels.sh <owner>/<repo>.
-  4. Run scripts/apply-branch-protection.sh <owner>/<repo> once CI has run.
-  5. Review the diff before committing.
+  4. Review the diff, commit, and open a PR (this triggers the checks).
+  5. Once the checks have reported on that PR, run
+     scripts/apply-branch-protection.sh <owner>/<repo>.
 EOF

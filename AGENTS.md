@@ -97,10 +97,12 @@ scripts/copy-project.sh BOARD_OWNER "<board title>"
 
 If it fails against an org, org projects are likely disabled; the script
 prints the fix, but changing org settings needs the user's explicit OK first.
-Then two things the API cannot do — hand these to the user:
+Then three things the API cannot do — hand these to the user:
 
 - Enable the auto-add workflow on the new board (UI only; see
   `docs/project-board.md`).
+- Verify the built-in "Item closed -> Done" workflow copied over; enable it
+  if not.
 - Link the target repo to the board (repo > Projects tab).
 
 ### 5. Board automation (optional, needs a human for the token)
