@@ -1,0 +1,24 @@
+# Maps changed paths to PR labels (used by workflows/pr-labels.yml).
+# Adapt the label names and globs to the target repo's layout, and make sure
+# each label exists in the repo (see scripts/apply-labels.sh).
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - "**/*.md"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+
+# Example per-layer labels. Uncomment and adjust to the repo's directories.
+# backend:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - backend/**
+#
+# frontend:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - frontend/**

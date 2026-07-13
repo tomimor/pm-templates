@@ -1,0 +1,29 @@
+# Validates PR titles as Conventional Commits (the squash-merge subject on main).
+# `synchronize` keeps the required check reporting after each push.
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Validate Conventional Commit title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check title against Conventional Commits
+        # Title arrives via env and is never interpolated into the script, so a
+        # crafted PR title cannot inject shell.
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|docs|refactor|test|chore|perf|build|ci)(\([^)]+\))?!?: [^A-Z].*$'
+          if ! printf '%s' "$TITLE" | grep -qE "$pattern"; then
+            echo "::error::PR title doesn't follow Conventional Commit structure"
+            echo "Expected: <type>(<optional scope>)<optional !>: <subject>"
+            echo "Types:    feat, fix, docs, refactor, test, chore, perf, build, ci"
+            echo "Subject:  must start lowercase."
+            exit 1
+          fi

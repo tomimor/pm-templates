@@ -1,0 +1,11 @@
+{
+  // Rule docs: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+  "config": {
+    "default": true,
+    // line-length: noisy on spec docs and wide tables
+    "MD013": false,
+    // PR template opens with H2 sections, no single top-level H1
+    "MD041": false
+  },
+  "globs": ["README.md", "docs/**/*.md", ".github/**/*.md"]
+}

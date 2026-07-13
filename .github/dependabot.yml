@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned and patched. Active now (this repo has workflows).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "chore"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Uncomment the ecosystem(s) that match the stack once a manifest lands.
+  # - package-ecosystem: "npm"        # or: cargo, gomod, pip, maven, gradle, bundler
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #   labels: ["chore"]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+  #   open-pull-requests-limit: 10

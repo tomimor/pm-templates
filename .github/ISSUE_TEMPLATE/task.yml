@@ -1,0 +1,33 @@
+# If the org defines a "Task" issue type, replace `labels` with `type: Task`.
+name: Task
+description: A concrete, scoped piece of work under a feature.
+labels: ["task"]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What this task delivers. Keep it to one layer or component.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How we know it is done. Bullet list.
+    validations:
+      required: true
+  - type: input
+    id: depends_on
+    attributes:
+      label: Depends on
+      description: Issues that must land first, e.g. "Depends on #12, #14".
+    validations:
+      required: false
+  - type: input
+    id: refs
+    attributes:
+      label: Refs
+      description: Parent feature, ADRs, or spec issues this traces to.
+    validations:
+      required: false
