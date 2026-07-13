@@ -13,7 +13,7 @@ REPO="${1:?usage: $0 <owner>/<repo> [branch]}"
 BRANCH="${2:-main}"
 
 # Required status checks. Names must match the workflow job names exactly.
-# Set to empty to skip (e.g. before any CI exists in the repo).
+# Set to '[]' to require none (e.g. before any CI exists in the repo).
 CHECKS='["TruffleHog", "Validate Conventional Commit title", "markdownlint"]'
 
 gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" \

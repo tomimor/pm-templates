@@ -32,10 +32,12 @@ owner_node_id() {
     -f owner="$1" --jq '.data.repositoryOwner.id'
 }
 
-SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER")"
+# `|| true`: a missing project is a GraphQL error (gh exits 1), and set -e
+# would otherwise kill the script before the messages below can print.
+SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER" || true)"
 [ -n "$SOURCE_ID" ] || { echo "error: source project $SOURCE_OWNER/#$SOURCE_NUMBER not found or not readable" >&2; exit 1; }
 
-TARGET_ID="$(owner_node_id "$TARGET_OWNER")"
+TARGET_ID="$(owner_node_id "$TARGET_OWNER" || true)"
 [ -n "$TARGET_ID" ] || { echo "error: owner $TARGET_OWNER not found" >&2; exit 1; }
 
 if ! URL="$(gh api graphql -f query='

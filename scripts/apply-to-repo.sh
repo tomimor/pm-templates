@@ -8,7 +8,11 @@ set -euo pipefail
 TARGET="${1:?usage: $0 <path-to-target-repo-checkout>}"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 
-[ -d "$TARGET/.git" ] || { echo "error: $TARGET is not a git checkout" >&2; exit 1; }
+# rev-parse instead of a .git dir test: in worktrees and submodules .git is a file.
+git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 \
+  || { echo "error: $TARGET is not a git checkout" >&2; exit 1; }
+[ "$(cd "$TARGET" && pwd)" != "$SRC" ] \
+  || { echo "error: target is this template repo itself" >&2; exit 1; }
 
 mkdir -p "$TARGET/.github/workflows" "$TARGET/.github/ISSUE_TEMPLATE" "$TARGET/scripts"
 
