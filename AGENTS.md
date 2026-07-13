@@ -110,7 +110,7 @@ themselves.
 Template-created repos only (apply-to-repo.sh never copies these):
 
 ```sh
-git rm AGENTS.md docs/project-board-plan.md docs/project-board.md \
+git rm AGENTS.md docs/project-board.md \
        scripts/apply-to-repo.sh scripts/copy-project.sh
 ```
 

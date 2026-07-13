@@ -12,7 +12,7 @@ Replicate it with `scripts/copy-project.sh <target-owner>`, which wraps the
 
 | View | Layout | Filter | Group by | Sort by |
 | --- | --- | --- | --- | --- |
-| Backlog | Table | `-status:Done is:issue` | Parent issue | Status desc, Type asc |
+| Backlog | Table | `-status:Done is:issue` | Parent issue | Status desc |
 | Team | Board | `is:issue` | Milestone | Priority asc |
 | Active PRs | Table | `is:pr -status:Done` | | Status desc, Updated desc |
 | Me | Table | `assignee:@me` | | Status asc |
@@ -23,8 +23,8 @@ Replicate it with `scripts/copy-project.sh <target-owner>`, which wraps the
 | Field | Type | Options |
 | --- | --- | --- |
 | Status | Single select | Design, Todo, In Progress, To Review, Done |
-| Priority | Single select | (none defined yet) |
-| Effort | Single select | (none defined yet) |
+| Priority | Single select | Urgent, High, Medium, Low |
+| Effort | Single select | High, Medium, Low |
 
 ## Manual steps after copying
 

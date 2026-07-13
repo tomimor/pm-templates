@@ -48,8 +48,8 @@ the manual follow-ups (auto-add, repo link) each copy needs.
 
 ### New repo
 
-Mark this repo as a template on GitHub (Settings, then "Template repository"),
-then create new repos from it:
+This repo is marked as a template repository on GitHub; create new repos from
+it:
 
 ```sh
 gh repo create <owner>/<name> --template <owner>/github-pm-templates --private --clone
