@@ -22,8 +22,8 @@ Collect these before starting. Ask the user for anything missing.
 
 - `TARGET`: target repo as `<owner>/<repo>` (may exist already or need creating)
 - `BOARD_OWNER`: org or user that should own the project board (often the
-  target repo's owner). Skip steps 4, 5, and the board lines of step 6 if the
-  user does not want a board.
+  target repo's owner). Skip steps 4 and 5 if the user does not want a board;
+  step 6's cleanup is unconditional either way.
 
 ## Preflight
 
