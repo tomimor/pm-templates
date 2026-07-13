@@ -27,6 +27,7 @@ Collect these before starting. Ask the user for anything missing.
 
 ## Preflight
 
+- `gh` (2.31 or newer) and `jq` must be installed.
 - `gh auth status` must show a logged-in user whose token has the `project`
   scope. If the scope is missing, ask the user to run
   `gh auth refresh -s project` themselves (it is an interactive browser flow).
@@ -69,8 +70,9 @@ PR):
   layout. Every label referenced must exist (step 3 creates the baseline set).
 - `.github/dependabot.yml`: uncomment the package ecosystem(s) matching the
   target's manifests.
-- If the target org defines GitHub issue types, switch
-  `.github/ISSUE_TEMPLATE/task.yml` from `labels: ["task"]` to `type: Task`.
+- If the target org has issue types enabled (org-level feature; never applies
+  to user-owned repos), switch `.github/ISSUE_TEMPLATE/task.yml` from
+  `labels: ["task"]` to `type: Task`.
 
 ### 3. Labels
 
@@ -84,7 +86,10 @@ the user.
 
 ### 4. Project board (optional)
 
-Run from the template clone (`copy-project.sh` is never shipped to targets):
+Run from the template clone (`copy-project.sh` is never shipped to targets).
+The default source board is private to its owner; other runners must override
+`SOURCE_OWNER`/`SOURCE_NUMBER` to a board they can read, or rebuild the views
+manually from `docs/project-board.md`:
 
 ```sh
 scripts/copy-project.sh BOARD_OWNER "<board title>"

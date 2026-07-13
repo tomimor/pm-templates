@@ -55,6 +55,10 @@ it:
 gh repo create <owner>/<name> --template <owner>/github-pm-templates --private --clone
 ```
 
+The template must be readable by whoever runs this. While it stays private and
+personal, that means the owner only; for teammates, make it public, move it
+into their org, or have them use the existing-repo path.
+
 ### Existing repo
 
 ```sh
@@ -91,3 +95,5 @@ The full ordered version lives in [AGENTS.md](AGENTS.md); the short form:
   it checks out nothing, so untrusted code never executes with write perms.
 - Branch protection lives in a script instead of clicking through settings, so
   it is reviewable, repeatable, and portable across orgs.
+- Everything targets github.com; GHES is untested (the status workflow's URL
+  parsing, for one, assumes github.com).

@@ -12,6 +12,8 @@ set -euo pipefail
 TARGET_OWNER="${1:?usage: $0 <target-owner> [title]}"
 TITLE="${2:-PM Board Template}"
 
+command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
+
 # Canonical source. Override via env to copy from a different board.
 SOURCE_OWNER="${SOURCE_OWNER:-tomimor}"
 SOURCE_NUMBER="${SOURCE_NUMBER:-9}"
@@ -38,7 +40,12 @@ owner_node_id() {
 }
 
 SOURCE_ID="$(owner_project_id "$SOURCE_OWNER" "$SOURCE_NUMBER")"
-[ -n "$SOURCE_ID" ] || { echo "error: source project $SOURCE_OWNER/#$SOURCE_NUMBER not found or not readable" >&2; exit 1; }
+[ -n "$SOURCE_ID" ] || {
+  echo "error: source project $SOURCE_OWNER/#$SOURCE_NUMBER not found or not readable" >&2
+  echo "The default source board is private. Override with SOURCE_OWNER/SOURCE_NUMBER," >&2
+  echo "or rebuild the views manually from docs/project-board.md." >&2
+  exit 1
+}
 
 TARGET_ID="$(owner_node_id "$TARGET_OWNER")"
 [ -n "$TARGET_ID" ] || { echo "error: owner $TARGET_OWNER not found" >&2; exit 1; }
