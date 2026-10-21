@@ -35,7 +35,8 @@ call.
 `copyProjectV2` carries views, fields, and built-in workflows except auto-add.
 On each new copy:
 
-1. Link the repo: repo > Projects tab > add the new project.
+1. Link the repo, if AGENTS.md step 4 couldn't: repo > Projects tab > add the
+   new project.
 2. **Auto-add**: the project's `...` menu > Workflows > Auto-add to project. Enable it
    for the linked repo with filter `is:issue,pr`.
 3. **Item closed -> Done**: verify the built-in workflow copied; enable if not.

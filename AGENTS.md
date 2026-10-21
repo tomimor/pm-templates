@@ -29,7 +29,7 @@ Collect these before starting. Ask the user for anything missing.
 
 ## Preflight
 
-- `gh` (2.31 or newer) and `jq` must be installed.
+- `gh` (2.45 or newer) and `jq` must be installed.
 - `gh auth status` must show a logged-in user whose token has the `project`
   scope. If the scope is missing, ask the user to run
   `gh auth refresh -s project` themselves (it is an interactive browser flow).
@@ -100,7 +100,15 @@ scripts/copy-project.sh BOARD_OWNER "BOARD_TITLE"
 
 If it fails against an org, org projects are likely disabled; the script
 prints the fix, but changing org settings needs the user's explicit OK first.
-Then hand the user the steps under "Manual steps after copying" in
+If `BOARD_OWNER` also owns `TARGET`, link the board to the repo (the number is
+the last segment of the URL the script prints). GitHub only links boards and
+repos with the same owner; otherwise the user links it in the UI.
+
+```sh
+gh project link <board-number> --owner BOARD_OWNER --repo TARGET
+```
+
+Then hand the user the remaining steps under "Manual steps after copying" in
 `docs/project-board.md`.
 
 ### 5. Board automation (optional, needs the user for the token)
@@ -179,4 +187,4 @@ flag a pre-existing AGENTS.md in the target as template metadata.
 - Step 6's cleanup list is authoritative. When adding a template-metadata file
   to this repo, add it to that list in the same change.
 - Changes to this repo land on `main` through a PR that closes an issue on
-  board #9. The merged `main` is the template.
+  board #9 (Dependabot PRs are exempt). The merged `main` is the template.
