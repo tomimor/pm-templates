@@ -1,4 +1,4 @@
-# Validates PR titles as Conventional Commits (the squash-merge subject on main).
+# Validates PR titles as Conventional Commits.
 # `synchronize` keeps the required check reporting after each push.
 name: PR Title
 
