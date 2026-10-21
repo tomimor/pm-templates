@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copies the canonical project board (views + fields, no items) to a new owner.
-# Views have no create API, so copyProjectV2 is the only way to replicate them.
+# copyProjectV2 carries views, fields and workflows across in a single call.
 #
 # Usage: scripts/copy-project.sh <target-owner> [title]
 #

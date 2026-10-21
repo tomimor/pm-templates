@@ -1,12 +1,16 @@
 # Project board
 
-The canonical board is `https://github.com/users/tomimor/projects/9`
-("PM Board Template", private). GitHub has no API to create or edit views, so
-that live project is the source of truth. This file is its reviewable record:
-when the board changes, update this file in the same sitting.
+Board #9 (`https://github.com/users/tomimor/projects/9`, "PM Board Template",
+private) is the source of truth. This file is its reviewable record: when the
+board changes, update this file in the same PR.
 
-Replicate it with `scripts/copy-project.sh <target-owner>`, which wraps the
-`copyProjectV2` GraphQL mutation (the only API path that carries views across).
+The board also tracks this repo's roadmap. Copies never include its issues or
+PRs, and the board's README and short description are written to stay true in a
+copy.
+
+Copy it with `scripts/copy-project.sh <target-owner>`, which wraps the
+`copyProjectV2` GraphQL mutation to copy views, fields, and workflows in one
+call.
 
 ## Views
 
@@ -31,15 +35,17 @@ Replicate it with `scripts/copy-project.sh <target-owner>`, which wraps the
 `copyProjectV2` carries views, fields, and built-in workflows except auto-add.
 On each new copy:
 
-1. **Auto-add**: project ... menu > Workflows > Auto-add to project. Enable it
+1. Link the repo, if AGENTS.md step 4 couldn't: repo > Projects tab > add the
+   new project.
+2. **Auto-add**: the project's `...` menu > Workflows > Auto-add to project. Enable it
    for the linked repo with filter `is:issue,pr`.
-2. **Item closed -> Done**: verify the built-in workflow copied; enable if not.
-3. Link the repo: repo > Projects tab > add the new project.
+3. **Item closed -> Done**: verify the built-in workflow copied; enable if not.
 
 ## Org prerequisite
 
 Copying into an org fails with a generic server error when organization
-projects are disabled there. Check and fix:
+projects are disabled there. Check and fix (the fix needs an org owner's token
+with the `admin:org` scope; ask the user first):
 
 ```sh
 gh api orgs/<org> --jq .has_organization_projects

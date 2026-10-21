@@ -4,10 +4,11 @@
 #
 # Setup (both required, workflow no-ops without them):
 #   - Repo variable PROJECT_URL, e.g. https://github.com/orgs/acme/projects/3
-#   - Repo secret PROJECTS_TOKEN: fine-grained PAT with Projects read/write on
-#     the project owner, plus repository access with Pull requests read (the
-#     mutation has to resolve the PR node). The default GITHUB_TOKEN cannot
-#     write org or user projects, which is why a PAT is needed.
+#   - Repo secret PROJECTS_TOKEN. Org-owned project: fine-grained PAT owned by
+#     the org, with Projects read/write plus Pull requests read on this repo
+#     (the mutation has to resolve the PR node). User-owned project: classic
+#     PAT with `project` and `repo` scopes, since fine-grained PATs cannot
+#     access user projects. GITHUB_TOKEN cannot write projects at all.
 name: PR Project Status
 
 on:
