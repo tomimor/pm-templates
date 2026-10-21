@@ -133,7 +133,7 @@ GitHub's docs say fine-grained PATs cannot access user-owned projects.
 Template-created repos only:
 
 ```sh
-git rm --ignore-unmatch AGENTS.md docs/project-board.md \
+git rm --ignore-unmatch AGENTS.md LICENSE docs/project-board.md \
        scripts/apply-to-repo.sh scripts/copy-project.sh
 ```
 
