@@ -1,5 +1,7 @@
 # Assigns the PR author as the assignee when a PR is opened/reopened.
-# Action is SHA-pinned (Dependabot keeps it current).
+# Skips bots and PRs that already have an assignee.
+# Uses the runner's preinstalled `gh` instead of a third-party action, so no
+# outside code runs with this job's write token.
 name: Auto Author Assign
 
 on:
@@ -11,6 +13,18 @@ permissions:
 
 jobs:
   assign-author:
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      join(github.event.pull_request.assignees.*.login) == ''
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
-      - uses: toshimaru/auto-author-assign@3e19bfc990cb1cf0589dce95e9f75289bb1e22de # v3.0.3
+      - name: Assign the PR author
+        # Event values arrive via env and are never interpolated into the
+        # script, so a crafted login cannot inject shell.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: gh api --method POST "repos/$REPO/issues/$PR/assignees" -f "assignees[]=$AUTHOR" --silent
